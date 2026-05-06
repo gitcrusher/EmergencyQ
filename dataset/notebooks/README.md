@@ -17,3 +17,7 @@
 | ipykernel    | notebook kernel              |
 | tqdm         | progress bars                |
 | wordcloud    | text visualization           |
+
+all the files in eda is taken from the location inside dataset folder only 
+```dataset/raw ```
+
