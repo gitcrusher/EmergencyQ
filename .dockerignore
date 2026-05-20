@@ -1,0 +1,42 @@
+
+.git
+.gitignore
+
+# Environment variables 
+.env
+
+# Python Virtual Environments & Cache
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Node.js (Frontend)
+node_modules/
+build/
+dist/
+
+# IDE / Editor folders
+.vscode/
+.idea/
+.qodo/
+
+# Heavy Directories 
+dataset/
+training/
+EmergencyML/
+
+# DevOps / Infra files
+terraform/
+k8s/
+jenkins/
+monitoring/
+scripts/
+
+# Documentation
+README.md
+DEVOPS_BIBLE.md
