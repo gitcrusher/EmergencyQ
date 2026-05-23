@@ -1,0 +1,40 @@
+# ============================================================
+#  requirements.docker.txt — EmergencyQ Backend (Docker only)
+#
+#  Actual code imports se generate kiya gaya
+#  (laptop ka full requirements.txt use mat karo Docker mein)
+# ============================================================
+
+# ── Web Framework ────────────────────────────────────────────
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+starlette==1.0.0
+pydantic==2.13.4
+pydantic_core==2.46.4
+python-multipart==0.0.20
+python-dotenv==1.2.2
+
+# ── Monitoring (Prometheus) ──────────────────────────────────
+prometheus_client==0.25.0
+prometheus-fastapi-instrumentator
+
+# ── Database ─────────────────────────────────────────────────
+SQLAlchemy==2.0.49
+psycopg2-binary==2.9.12
+
+# ── ML / NLP ─────────────────────────────────────────────────
+# NOTE: torch Dockerfile mein alag se install hota hai
+transformers==4.41.2
+sentence-transformers
+scikit-learn==1.8.0
+spacy==3.8.14
+joblib==1.5.3
+numpy==2.4.4
+
+# ── Vector DB ────────────────────────────────────────────────
+chromadb
+
+# ── HTTP Client ──────────────────────────────────────────────
+httpx==0.28.1
+aiohttp==3.13.5
+
