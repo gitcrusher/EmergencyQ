@@ -1,33 +1,23 @@
-# ══════════════════════════════════════════════
-#  main.tf — EmergencyQ
-#
-#  YE FILE SABSE IMPORTANT HAI TERRAFORM MEIN.
-#
-#  Ye file kya karti hai?
-#  AWS pe ACTUAL resources banati hai:
-#    → VPC (Virtual Private Cloud) = tera private network
-#    → Subnet = network ke andar chhote sections
-#    → Security Group = firewall (kaun aa sakta hai, kaun nahi)
-#    → EC2 Instance = server machine (Docker chalegi isme)
+
+#  AWS creates resource :
+#    → VPC (Virtual Private Cloud) = private network
+#    → Subnet = inside network small sections
+#    → Security Group = firewall
+#    → EC2 Instance = server machine ( to run  Docker)
 #    → RDS PostgreSQL = managed database
-#    → S3 Bucket = ML model files store karne ke liye
-#
-#  IMPORTANT: Ye file kuch nahi banayegi jab tak
-#  tu `terraform apply` nahi chalata.
-#  Ye sirf "blueprint" hai — jaise ghar ka naksha.
-# ══════════════════════════════════════════════
+#    → S3 Bucket = to store ml model files.
 
 
-# ──────────────────────────────────────────────
+
 #  DATA SOURCE: Latest Ubuntu AMI
-# ──────────────────────────────────────────────
-# AMI = Amazon Machine Image = OS ka template
-# Ye automatically latest Ubuntu 22.04 dhundh leta hai
-# Tujhe manually AMI ID yaad nahi rakhni padti
+
+# AMI = Amazon Machine Image = OS's template
+# automatically finds latest Ubuntu 22.04 
+# we dont have to manually remmeber the ami id 
 
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"]     # Canonical (Ubuntu ke makers)
+  owners      = ["099720109477"]     # Canonical (Ubuntu's makers)
 
   filter {
     name   = "name"
@@ -41,18 +31,15 @@ data "aws_ami" "ubuntu" {
 }
 
 
-# ──────────────────────────────────────────────
 #  VPC — Virtual Private Cloud
-# ──────────────────────────────────────────────
-# VPC = Tera private network AWS mein
-# Jaise tera ghar ka WiFi network hota hai —
-# bahar wale directly access nahi kar sakte
-# jab tak tu allow na kare.
+
+# VPC = private network
+# no body could access the network without your permission
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"       # IP range: 10.0.0.0 - 10.0.255.255 (65K IPs)
-  enable_dns_support   = true                  # DNS kaam kare VPC ke andar
-  enable_dns_hostnames = true                  # Servers ko DNS names milein
+  enable_dns_support   = true                  # DNS works inside VPC
+  enable_dns_hostnames = true                  # Servers will get DNS names
 
   tags = {
     Name = "${var.project_name}-vpc"
@@ -60,26 +47,24 @@ resource "aws_vpc" "main" {
 }
 
 
-# ──────────────────────────────────────────────
-#  SUBNETS — Network ke Sections
-# ──────────────────────────────────────────────
-# Subnet = VPC ke andar chhote sections
-# Kyun? Alag-alag resources ko alag sections mein rakhna
-# (jaise ghar mein rooms hote hain — kitchen, bedroom, bathroom)
 
-# Public Subnet 1 — Ye internet se accessible hai
+#  SUBNETS — Network's Sections
+
+# Subnet = small section inside vpc
+
+# Public Subnet 1 — accessible form internet
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"       # 256 IPs
   availability_zone       = "${var.aws_region}a"  # Mumbai zone A
-  map_public_ip_on_launch = true                  # EC2 ko automatic public IP mile
-
+  map_public_ip_on_launch = true                  # EC2 gets public ip automaticall
+  
   tags = {
     Name = "${var.project_name}-public-1"
   }
 }
 
-# Public Subnet 2 — RDS ke liye 2 zones chahiye (AWS requirement)
+# Public Subnet 2 — for RDS we need 2 zones according to AWS 
 resource "aws_subnet" "public_2" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
@@ -92,11 +77,11 @@ resource "aws_subnet" "public_2" {
 }
 
 
-# ──────────────────────────────────────────────
-#  INTERNET GATEWAY — Bahar se access
-# ──────────────────────────────────────────────
-# Internet Gateway = Tera VPC ka main gate
-# Bina iske koi bhi server internet se baat nahi kar sakta
+
+#  INTERNET GATEWAY — access from out side
+
+# Internet Gateway = main gate for vpc
+# Without this , no server can communicate with the internet
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
@@ -107,18 +92,16 @@ resource "aws_internet_gateway" "igw" {
 }
 
 
-# ──────────────────────────────────────────────
-#  ROUTE TABLE — Traffic kahan jaaye
-# ──────────────────────────────────────────────
-# Route Table = Traffic directions
-# "Internet ki taraf jaana hai? Internet Gateway se jao"
+
+#  ROUTE TABLE — Traffic directions
+#  if you wanna go towards internet go from the gateway created
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block = "0.0.0.0/0"                    # Koi bhi destination
-    gateway_id = aws_internet_gateway.igw.id     # Internet Gateway se jao
+    cidr_block = "0.0.0.0/0"                    # for any destination 
+    gateway_id = aws_internet_gateway.igw.id     # internet gateway
   }
 
   tags = {
@@ -138,26 +121,26 @@ resource "aws_route_table_association" "public_2" {
 }
 
 
-# ──────────────────────────────────────────────
 #  SECURITY GROUP — Firewall Rules
-# ──────────────────────────────────────────────
-# Security Group = Darwaze pe guard
-# "Kaun andar aa sakta hai, kaunse port pe"
+
+# Security Group = security protocol
+# it tell who can come and also onto which port.
 
 resource "aws_security_group" "app_sg" {
   name_prefix = "${var.project_name}-app-"
   vpc_id      = aws_vpc.main.id
   description = "EmergencyQ app server security group"
 
-  # ── INBOUND RULES (kaun aa sakta hai) ────────
+  #  INBOUND RULES 
+  
 
-  # SSH access (port 22) — tere laptop se server pe jaane ke liye
+  # SSH access (port 22) — 
   ingress {
     description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]     # TODO: Production mein apna IP daalo
+    cidr_blocks = ["0.0.0.0/0"]     # TODO: in production add your ip 
   }
 
   # HTTP (port 80) — Frontend access
@@ -166,10 +149,10 @@ resource "aws_security_group" "app_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]     # Sabko allow (public website)
+    cidr_blocks = ["0.0.0.0/0"]     # allowed for all  (public website)
   }
 
-  # HTTPS (port 443) — Secure access
+  # HTTPS (port 443) — 
   ingress {
     description = "HTTPS"
     from_port   = 443
@@ -189,8 +172,8 @@ resource "aws_security_group" "app_sg" {
 
 
 
-  # ── OUTBOUND RULES (bahar kahan ja sakta hai) ──
-  # Sab jagah ja sakta hai (updates download, Docker Hub, etc.)
+   OUTBOUND RULES (bahar kahan ja sakta hai) 
+  # all the time allowed
   egress {
     from_port   = 0
     to_port     = 0
@@ -203,42 +186,14 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# ──────────────────────────────────────────────
-# ❌ RDS SECURITY GROUP — SKIP (RDS already bana hua hai AWS pe)
-# Tera existing RDS: 
-# Dobara banane ki zaroorat nahi — extra cost aur conflict hoga
-# ──────────────────────────────────────────────
-# resource "aws_security_group" "db_sg" {
-#   name_prefix = "${var.project_name}-db-"
-#   vpc_id      = aws_vpc.main.id
-#   description = "EmergencyQ database security group"
-#
-#   ingress {
-#     description     = "PostgreSQL from app server"
-#     from_port       = 5432
-#     to_port         = 5432
-#     protocol        = "tcp"
-#     security_groups = [aws_security_group.app_sg.id]
-#   }
-#
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-#
-#   tags = {
-#     Name = "${var.project_name}-db-sg"
-#   }
-# }
 
 
-# ──────────────────────────────────────────────
+
+
+
 #  EC2 INSTANCE — App Server
-# ──────────────────────────────────────────────
+
 # EC2 = Elastic Compute Cloud = Virtual server
-# Ye tera main server hai jahan Docker containers chalenge
 
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.ubuntu.id         # Latest Ubuntu 22.04
@@ -253,8 +208,7 @@ resource "aws_instance" "app_server" {
     volume_type = "gp3"       # SSD (fast)
   }
 
-  # Server start hote hi ye commands automatically chalenge
-  # Docker install + project clone + docker-compose up
+  # Automatically installs Docker, clones the project repository, and starts the application using Docker Compose when the server boots.
   user_data = <<-EOF
     #!/bin/bash
     set -e
@@ -275,10 +229,10 @@ resource "aws_instance" "app_server" {
     systemctl enable docker
     systemctl start docker
 
-    # ubuntu user ko docker group mein daalo (sudo na lagana pade)
+    # Add the ubuntu user to the Docker group to avoid using sudo with Docker commands.
     usermod -aG docker ubuntu
 
-    echo "✅ Server ready! Docker installed."
+    echo "Server ready! Docker installed."
     echo "Next: git clone your repo and run docker-compose up"
   EOF
 
