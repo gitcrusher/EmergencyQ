@@ -10,8 +10,21 @@ build/
 .DS_Store
 Thumbs.db
 .vscode/
+.ssh/
 
 # ── AI / ML Models & Databases ──
 backend/app/model/trained_model/
 backend/app/model/*.pkl
 backend/app/vectordb/chroma_db/
+
+# ── SSH Keys & Terraform Secrets ──
+*.pem
+terraform.tfvars
+
+# ── Terraform State & Plugins ──
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan

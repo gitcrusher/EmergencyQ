@@ -1,29 +1,33 @@
 
 #  Dockerfile.backend — EmergencyQ
 
-
 FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# System deps (psycopg2 ke liye gcc chahiye)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Hash entries in requirements.txt cause pip to fail when PyPI updates packages
-# Strip all --hash lines and backslash continuations before installing
-RUN sed -i 's/ \\$//' requirements.txt && \
-    grep -v '^\s*--hash=' requirements.txt > requirements_clean.txt
+# Docker-specific requirements (CPU torch, sirf backend packages)
+COPY requirements.docker.txt .
 
-RUN mkdir -p /pip-tmp
+# PyTorch CPU — CPU wheels +cpu suffix ke saath aate hain whl index pe
+RUN pip install --no-cache-dir "torch==2.5.1+cpu" --index-url https://download.pytorch.org/whl/cpu
 
-# Install PyTorch CPU version first, then everything else
-RUN TMPDIR=/pip-tmp pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
-    TMPDIR=/pip-tmp pip install --no-cache-dir -r requirements_clean.txt && \
-    rm -rf /pip-tmp requirements_clean.txt
+# Baaki sab packages
+RUN pip install --no-cache-dir -r requirements.docker.txt
 
+# SpaCy model download
+RUN python -m spacy download en_core_web_sm
+
+# App code copy
 COPY backend/ ./backend/
 
 ENV PYTHONUTF8=1
-ENV PYTHONPATH=/app/backend
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
 
