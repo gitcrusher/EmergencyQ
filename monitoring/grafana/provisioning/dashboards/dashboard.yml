@@ -1,0 +1,20 @@
+
+#  dashboard.yml — Grafana Dashboard Provider
+
+#  Tells Grafana: "The dashboard JSON files are stored in this folder — load them automatically."
+#  When Grafana starts, your EmergencyQ dashboard is automatically displayed.No manual dashboard import is required.
+
+
+
+apiVersion: 1
+
+providers:
+  - name: 'EmergencyQ Dashboards'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards    # inside container path where dashboard JSON files are stored
+      foldersFromFilesStructure: false
