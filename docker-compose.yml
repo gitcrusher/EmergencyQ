@@ -1,6 +1,4 @@
 #  docker-compose.yml — EmergencyQ
-#
-#  ROOT se run karo (project root mein hai ye file):
 #  Command: docker-compose up --build
 #  Band:    docker-compose down
 
