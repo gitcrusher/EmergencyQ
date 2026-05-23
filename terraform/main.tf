@@ -172,7 +172,7 @@ resource "aws_security_group" "app_sg" {
 
 
 
-   OUTBOUND RULES (bahar kahan ja sakta hai) 
+  # OUTBOUND RULES (bahar kahan ja sakta hai) 
   # all the time allowed
   egress {
     from_port   = 0
