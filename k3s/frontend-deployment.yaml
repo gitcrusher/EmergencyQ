@@ -32,8 +32,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: nlpproject-frontend:latest   # local image (k3d imported)
-          imagePullPolicy: Never                    # use local image, don't pull from registry
+          image: nlpproject-frontend:latest
+          imagePullPolicy: Never
 
           ports:
             - containerPort: 80
