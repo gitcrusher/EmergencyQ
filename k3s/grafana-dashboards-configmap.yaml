@@ -1,0 +1,79 @@
+apiVersion: v1
+data:
+  emergencyq.json: "{\n  \"annotations\": { \"list\": [] },\n  \"editable\": true,\n
+    \ \"fiscalYearStartMonth\": 0,\n  \"graphTooltip\": 1,\n  \"links\": [],\n  \"panels\":
+    [\n    {\n      \"title\": \"\U0001F4CA Request Rate (per second)\",\n      \"description\":
+    \"Har second mein kitni requests aa rahi hain backend pe\",\n      \"type\": \"timeseries\",\n
+    \     \"gridPos\": { \"h\": 8, \"w\": 12, \"x\": 0, \"y\": 0 },\n      \"datasource\":
+    { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": { \"mode\": \"palette-classic\"
+    },\n          \"custom\": { \"lineWidth\": 2, \"fillOpacity\": 20, \"gradientMode\":
+    \"scheme\", \"showPoints\": \"auto\", \"pointSize\": 5 },\n          \"unit\":
+    \"reqps\"\n        },\n        \"overrides\": []\n      },\n      \"targets\":
+    [\n        { \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"
+    }, \"expr\": \"rate(http_requests_total[1m])\", \"legendFormat\": \"{{method}}
+    {{handler}}\", \"refId\": \"A\" }\n      ]\n    },\n    {\n      \"title\": \"ΓÅ▒∩╕Å
+    Response Time (p95)\",\n      \"description\": \"95% requests ka response time\",\n
+    \     \"type\": \"timeseries\",\n      \"gridPos\": { \"h\": 8, \"w\": 12, \"x\":
+    12, \"y\": 0 },\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"
+    },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {
+    \"mode\": \"palette-classic\" },\n          \"custom\": { \"lineWidth\": 2, \"fillOpacity\":
+    20, \"gradientMode\": \"scheme\" },\n          \"unit\": \"s\"\n        },\n        \"overrides\":
+    []\n      },\n      \"targets\": [\n        { \"datasource\": { \"type\": \"prometheus\",
+    \"uid\": \"prometheus\" }, \"expr\": \"histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))\",
+    \"legendFormat\": \"p95 latency\", \"refId\": \"A\" }\n      ]\n    },\n    {\n
+    \     \"title\": \"Γ¥î Error Rate (5xx per minute)\",\n      \"type\": \"stat\",\n
+    \     \"gridPos\": { \"h\": 4, \"w\": 6, \"x\": 0, \"y\": 8 },\n      \"datasource\":
+    { \"type\": \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\":
+    {\n        \"defaults\": {\n          \"color\": { \"mode\": \"thresholds\" },\n
+    \         \"thresholds\": { \"steps\": [{ \"color\": \"green\", \"value\": null
+    }, { \"color\": \"yellow\", \"value\": 1 }, { \"color\": \"red\", \"value\": 5
+    }] }\n        },\n        \"overrides\": []\n      },\n      \"targets\": [\n
+    \       { \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"
+    }, \"expr\": \"sum(rate(http_requests_total{status=~\\\"5..\\\"}[1m])) * 60\",
+    \"legendFormat\": \"errors/min\", \"refId\": \"A\" }\n      ]\n    },\n    {\n
+    \     \"title\": \"\U0001F4C8 Total Requests\",\n      \"type\": \"stat\",\n      \"gridPos\":
+    { \"h\": 4, \"w\": 6, \"x\": 6, \"y\": 8 },\n      \"datasource\": { \"type\":
+    \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": { \"mode\": \"thresholds\" },\n          \"thresholds\":
+    { \"steps\": [{ \"color\": \"blue\", \"value\": null }] }\n        },\n        \"overrides\":
+    []\n      },\n      \"targets\": [\n        { \"datasource\": { \"type\": \"prometheus\",
+    \"uid\": \"prometheus\" }, \"expr\": \"sum(http_requests_total)\", \"legendFormat\":
+    \"total\", \"refId\": \"A\" }\n      ]\n    },\n    {\n      \"title\": \"\U0001F504
+    Active Requests (Right Now)\",\n      \"type\": \"gauge\",\n      \"gridPos\":
+    { \"h\": 4, \"w\": 6, \"x\": 12, \"y\": 8 },\n      \"datasource\": { \"type\":
+    \"prometheus\", \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\":
+    {\n          \"color\": { \"mode\": \"thresholds\" },\n          \"thresholds\":
+    { \"steps\": [{ \"color\": \"green\", \"value\": null }, { \"color\": \"yellow\",
+    \"value\": 10 }, { \"color\": \"red\", \"value\": 50 }] },\n          \"max\":
+    100, \"min\": 0\n        },\n        \"overrides\": []\n      },\n      \"targets\":
+    [\n        { \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"
+    }, \"expr\": \"sum(http_requests_in_progress)\", \"legendFormat\": \"active\",
+    \"refId\": \"A\" }\n      ]\n    },\n    {\n      \"title\": \"ΓÅ▒∩╕Å Avg Response
+    Time\",\n      \"type\": \"stat\",\n      \"gridPos\": { \"h\": 4, \"w\": 6, \"x\":
+    18, \"y\": 8 },\n      \"datasource\": { \"type\": \"prometheus\", \"uid\": \"prometheus\"
+    },\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {
+    \"mode\": \"thresholds\" },\n          \"unit\": \"s\",\n          \"thresholds\":
+    { \"steps\": [{ \"color\": \"green\", \"value\": null }, { \"color\": \"yellow\",
+    \"value\": 1 }, { \"color\": \"red\", \"value\": 3 }] }\n        },\n        \"overrides\":
+    []\n      },\n      \"targets\": [\n        { \"datasource\": { \"type\": \"prometheus\",
+    \"uid\": \"prometheus\" }, \"expr\": \"rate(http_request_duration_seconds_sum[5m])
+    / rate(http_request_duration_seconds_count[5m])\", \"legendFormat\": \"avg latency\",
+    \"refId\": \"A\" }\n      ]\n    },\n    {\n      \"title\": \"\U0001F4CA Requests
+    by Endpoint\",\n      \"type\": \"timeseries\",\n      \"gridPos\": { \"h\": 8,
+    \"w\": 24, \"x\": 0, \"y\": 12 },\n      \"datasource\": { \"type\": \"prometheus\",
+    \"uid\": \"prometheus\" },\n      \"fieldConfig\": {\n        \"defaults\": {\n
+    \         \"color\": { \"mode\": \"palette-classic\" },\n          \"custom\":
+    { \"lineWidth\": 2, \"fillOpacity\": 10, \"gradientMode\": \"scheme\", \"stacking\":
+    { \"mode\": \"normal\" } },\n          \"unit\": \"reqps\"\n        },\n        \"overrides\":
+    []\n      },\n      \"targets\": [\n        { \"datasource\": { \"type\": \"prometheus\",
+    \"uid\": \"prometheus\" }, \"expr\": \"rate(http_requests_total[1m])\", \"legendFormat\":
+    \"{{method}} {{handler}}\", \"refId\": \"A\" }\n      ]\n    }\n  ],\n  \"schemaVersion\":
+    39,\n  \"tags\": [\"emergencyq\", \"fastapi\", \"backend\"],\n  \"templating\":
+    { \"list\": [] },\n  \"time\": { \"from\": \"now-1h\", \"to\": \"now\" },\n  \"timepicker\":
+    {},\n  \"timezone\": \"browser\",\n  \"title\": \"EmergencyQ ΓÇö Backend Monitoring\",\n
+    \ \"uid\": \"emergencyq-backend\",\n  \"version\": 1\n}"
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: emergencyq
