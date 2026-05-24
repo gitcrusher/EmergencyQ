@@ -24,7 +24,7 @@ scrape_configs:
     # job_name = name woudl be shown in grafana when we select data source
 
     static_configs:
-      - targets: ['backend:8000']
+      - targets: ['13.206.12.95:80']
         #            ↑       ↑
         #   docker-compose   backend's port
         #   services name

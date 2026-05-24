@@ -4,31 +4,6 @@
 
 services:
 
-  # BACKEND (FastAPI)
-  backend:
-    image: emergencyq-backend:v2
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.backend
-    ports:
-      - "${API_PORT}:8000"
-    env_file:
-      - .env
-    restart: unless-stopped
-
-  # FRONTEND (React + Nginx)
-  frontend:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.frontend
-    ports:
-      - "${FRONTEND_PORT}:80"
-    environment:
-      - BACKEND_HOST=backend
-    depends_on:
-      - backend
-    restart: unless-stopped
-
   # PROMETHEUS (Metrics Collector)
   prometheus:
     image: prom/prometheus:latest
