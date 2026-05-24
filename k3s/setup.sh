@@ -36,13 +36,17 @@ kubectl get nodes
 echo -e "${BLUE}📦 Step 2: Creating namespace and secrets...${NC}"
 kubectl apply -f k3s/namespace.yaml
 
-# Generate secrets dynamically from the local .env file — no secrets in Git
 if [ -f .env ]; then
-    echo -e "${GREEN}🔑 Found .env — creating Kubernetes secret...${NC}"
+    echo -e "${GREEN}🔑 Found .env — cleaning spaces and creating Kubernetes secret...${NC}"
+    # Remove inline comments and spaces around '=' to prevent Kubernetes errors
+    sed 's/ *= */=/' .env | sed 's/ *$//' | grep -v '^#' | grep -v '^\s*$' > .env.k8s.clean
+    
     kubectl create secret generic emergencyq-secrets \
-      --from-env-file=.env \
+      --from-env-file=.env.k8s.clean \
       -n emergencyq \
       --dry-run=client -o yaml | kubectl apply -f -
+      
+    rm .env.k8s.clean
 else
     echo -e "${RED}❌ .env file not found. Create one on the server before running this script.${NC}"
     exit 1
