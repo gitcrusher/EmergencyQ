@@ -14,7 +14,7 @@ metadata:
     app: emergencyq-backend
 
 spec:
-  replicas: 2  # 2 copies: one handles traffic if the other crashes
+  replicas: 1  # 2 copies: one handles traffic if the other crashes
 
   selector:
     matchLabels:
