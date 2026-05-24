@@ -1,0 +1,26 @@
+apiVersion: v1
+data:
+  prometheus.yml: "\n#  prometheus.yml \n\n#  Prometheus is a monitoring tool that
+    continuously collects and stores metrics like requests, errors, and response times
+    from your application.\n\n#  now grafan coudl made beautiful graphs\n\n#  This
+    file tells Prometheus which services to collect data from and how frequently to
+    scrape the metrics.\n\n\nglobal:\n  # Collect data from each target every 15 seconds
+    ΓÇö more frequent scraping provides greater detail but consumes more storage, and
+    15 seconds is considered a good industry-standard balance.\n  scrape_interval:
+    15s\n\n  # If a target fails to respond within 10 seconds, skip it and move on
+    to the next one. This prevents Prometheus from getting stuck waiting for a slow
+    or unresponsive service.\n  scrape_timeout: 10s\n\n\n# scrape_configs = \"these
+    are the logs w=from which data is taken\"\nscrape_configs:\n\n  # TARGET 1: FastAPI
+    Backend \n  - job_name: 'emergencyq-backend'\n    # job_name = name woudl be shown
+    in grafana when we select data source\n\n    static_configs:\n      - targets:
+    ['emergencyq-backend-svc:8000']\n        #            Γåæ       Γåæ\n        #   docker-compose   backend's
+    port\n        #   services name\n        \n        # Your backend already exposes
+    a /metrics endpoint through the line `Instrumentator().instrument(app).expose(app)`
+    in `main.py`, allowing Prometheus to directly scrape application metrics from
+    it.\n\n  # TARGET 2: Prometheus self monitoring\n  - job_name: 'prometheus'\n
+    \   # Prometheus also monitors its own health by tracking metrics such as query
+    processing and memory usage.\n    static_configs:\n      - targets: ['localhost:9090']\n"
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: emergencyq

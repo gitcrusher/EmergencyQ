@@ -51,11 +51,19 @@ fi
 echo -e "${BLUE}⚙️  Applying ConfigMap...${NC}"
 kubectl apply -f k3s/configmap.yaml -n emergencyq
 
-echo -e "${BLUE}🚀 Step 3: Deploying backend and frontend...${NC}"
+echo -e "${BLUE}⚙️  Applying Monitoring ConfigMaps...${NC}"
+kubectl apply -f k3s/prometheus-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-datasources-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-providers-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-dashboards-configmap.yaml -n emergencyq
+
+echo -e "${BLUE}🚀 Step 3: Deploying App and Monitoring...${NC}"
 kubectl apply -f k3s/backend-deployment.yaml -n emergencyq
 kubectl apply -f k3s/backend-service.yaml -n emergencyq
 kubectl apply -f k3s/frontend-deployment.yaml -n emergencyq
 kubectl apply -f k3s/frontend-service.yaml -n emergencyq
+kubectl apply -f k3s/prometheus-deployment.yaml -n emergencyq
+kubectl apply -f k3s/grafana-deployment.yaml -n emergencyq
 
 echo -e "${BLUE}🌐 Applying Ingress routing rules...${NC}"
 kubectl apply -f k3s/ingress.yaml -n emergencyq
