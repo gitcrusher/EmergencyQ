@@ -170,9 +170,27 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Grafana Dashboard (port 3000)
+  ingress {
+    description = "Grafana"
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Prometheus UI (port 9090)
+  ingress {
+    description = "Prometheus"
+    from_port   = 9090
+    to_port     = 9090
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
 
-   OUTBOUND RULES (bahar kahan ja sakta hai) 
+
+  # OUTBOUND RULES (bahar kahan ja sakta hai) 
   # all the time allowed
   egress {
     from_port   = 0
@@ -245,13 +263,9 @@ resource "aws_instance" "app_server" {
 
 
 
-# ──────────────────────────────────────────────
 #  S3 BUCKET — ML Model Storage
-# ──────────────────────────────────────────────
-# S3 = Simple Storage Service = Cloud mein file storage
-# Trained DistilBERT model, label_encoder.pkl,
-# icp_model.pkl — sab yahan rakh do.
-# Server pe directly rakhne se agar server mita to model bhi gaya.
+
+#S3 (Simple Storage Service) is cloud-based file storage used to securely store files such as trained DistilBERT models, `label_encoder.pkl`, and `icp_model.pkl`, ensuring they remain safe even if the server is deleted.
 
 resource "aws_s3_bucket" "model_artifacts" {
   bucket = "${var.project_name}-models-${var.environment}"

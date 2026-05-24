@@ -1,0 +1,27 @@
+# backend-service.yaml
+# Gives the backend pods a stable, fixed address inside the cluster.
+# Pods come and go (crash, scale, restart) but the Service IP stays the same.
+# Ingress routes external traffic here; other pods call this service internally.
+#
+# Apply: kubectl apply -f k3s/backend-service.yaml -n emergencyq
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: emergencyq-backend-svc
+  namespace: emergencyq
+  labels:
+    app: emergencyq-backend
+
+spec:
+  type: ClusterIP  # Only accessible inside the cluster; Ingress handles external routing
+
+  ports:
+    - name: http
+      port: 8000       # Port other services use to reach this one
+      targetPort: 8000 # Port FastAPI is actually listening on
+      protocol: TCP
+
+  # Routes traffic to pods with this label (matches backend-deployment.yaml)
+  selector:
+    app: emergencyq-backend

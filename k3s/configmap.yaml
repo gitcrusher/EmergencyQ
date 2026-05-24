@@ -1,0 +1,34 @@
+# configmap.yaml
+# Stores non-sensitive environment variables for the app.
+# Think of it as a shared .env file — but for Kubernetes.
+# Use ConfigMap for ports, log levels, flags (nothing secret).
+# For passwords and API keys, use Secret instead.
+#
+# Apply: kubectl apply -f k3s/configmap.yaml -n emergencyq
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emergencyq-config
+  namespace: emergencyq
+  labels:
+    app: emergencyq
+data:
+  # App Settings
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  ENV: "production"
+  DEBUG: "False"
+  LOG_LEVEL: "info"
+
+  # ML Model Settings
+  MODEL_PATH: "backend/app/model/trained_model"
+  CONFORMAL_ALPHA: "0.05"
+
+  # CORS
+  ALLOWED_ORIGINS: "http://localhost:80,http://localhost:3000"
+
+  # Retrieval Settings
+  RETRIEVER_TOP_K: "5"
+  RETRIEVER_FETCH_K: "20"
+  DECAY_LAMBDA: "0.01"

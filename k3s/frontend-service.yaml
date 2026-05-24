@@ -1,0 +1,25 @@
+# frontend-service.yaml
+# Stable internal address for the frontend pods.
+# Same concept as backend-service — Ingress routes "/" traffic here.
+#
+# Apply: kubectl apply -f k3s/frontend-service.yaml -n emergencyq
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: emergencyq-frontend-svc
+  namespace: emergencyq
+  labels:
+    app: emergencyq-frontend
+
+spec:
+  type: ClusterIP
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+  selector:
+    app: emergencyq-frontend

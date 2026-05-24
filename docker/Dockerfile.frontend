@@ -1,40 +1,37 @@
-
-#  Dockerfile.frontend — EmergencyQ
+# Dockerfile.frontend — EmergencyQ
 #
-#  2-stage build:
-#    Stage 1 → build Node.js (dist/ creates folder)
-#    Stage 2 → Nginx serves the dist/ folder
+# 2-stage build:
+#   Stage 1 → Node.js builds the React app (dist/ folder)
+#   Stage 2 → Nginx serves the dist/ folder
 #
-#  why 2 stages? Node only for build purpose.
-#  Final image contain Nginx + HTML/CSS/JS only = ~25MB
+# Final image is ~25MB (no Node.js, just Nginx + static files)
 
-
-#  STAGE 1: React app build
+# ── Stage 1: Build ──────────────────────────────────────
 FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Package files first for caching
+# Copy package files first (layer caching — only reinstalls if deps change)
 COPY frontend/package.json frontend/package-lock.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy rest of the code
+# Copy source and build
 COPY frontend/ .
-
-# Build React app → dist/ folder contains static files
 RUN npm run build
 
 
-# STAGE 2: Nginx serve
+# ── Stage 2: Serve ──────────────────────────────────────
 FROM nginx:alpine
 
-# Build files into Nginx folder
+# Copy built React files into Nginx's web root
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Nginx config copy (React Router + API proxy)
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config template (uses ${BACKEND_HOST} variable)
+COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 
-# Port 80 (normal HTTP)
+# Nginx entrypoint runs envsubst automatically on files in /etc/nginx/templates/
+# It substitutes ${BACKEND_HOST} with the actual env var value at startup
+# Docker Compose sets: BACKEND_HOST=backend
+# Kubernetes sets:     BACKEND_HOST=emergencyq-backend-svc
+
 EXPOSE 80

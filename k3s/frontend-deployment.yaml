@@ -1,0 +1,68 @@
+# frontend-deployment.yaml
+# Runs the React app served via Nginx.
+# Lighter than the backend — no ML model, just static files.
+#
+# Apply: kubectl apply -f k3s/frontend-deployment.yaml -n emergencyq
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emergencyq-frontend
+  namespace: emergencyq
+  labels:
+    app: emergencyq-frontend
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: emergencyq-frontend
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: emergencyq-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: nlpproject-frontend:latest   # local image (k3d imported)
+          imagePullPolicy: Never                    # use local image, don't pull from registry
+
+          ports:
+            - containerPort: 80
+
+          # Tells nginx which backend service to proxy /api/ to
+          # Nginx template uses ${BACKEND_HOST} via envsubst at startup
+          env:
+            - name: BACKEND_HOST
+              value: "emergencyq-backend-svc"
+
+          # Frontend is lightweight — only serves static files
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

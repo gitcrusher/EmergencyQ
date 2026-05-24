@@ -1,0 +1,13 @@
+# namespace.yaml
+# Creates a virtual boundary (like a folder) inside the Kubernetes cluster.
+# This isolates all EmergencyQ resources from other apps on the same cluster.
+#
+# Apply: kubectl apply -f k3s/namespace.yaml
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: emergencyq
+  labels:
+    app: emergencyq
+    managed-by: kubectl

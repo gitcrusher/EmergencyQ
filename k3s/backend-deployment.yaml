@@ -1,0 +1,74 @@
+# backend-deployment.yaml
+# Tells Kubernetes how to run the FastAPI backend.
+# Keeps 2 replicas running at all times for high availability.
+# Uses RollingUpdate so there's zero downtime during deployments.
+#
+# Apply: kubectl apply -f k3s/backend-deployment.yaml -n emergencyq
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emergencyq-backend
+  namespace: emergencyq
+  labels:
+    app: emergencyq-backend
+
+spec:
+  replicas: 2  # 2 copies: one handles traffic if the other crashes
+
+  selector:
+    matchLabels:
+      app: emergencyq-backend
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Spin up 1 extra pod during updates
+      maxUnavailable: 0  # Never take a pod down before the new one is ready (zero downtime)
+
+  template:
+    metadata:
+      labels:
+        app: emergencyq-backend
+    spec:
+      containers:
+        - name: backend
+          image: emergencyq-backend:v2   # local image (k3d imported)
+          imagePullPolicy: Never               # use local image, don't pull from registry
+
+          ports:
+            - containerPort: 8000
+
+          # Load env vars from ConfigMap (non-sensitive) and Secret (sensitive)
+          envFrom:
+            - configMapRef:
+                name: emergencyq-config
+            - secretRef:
+                name: emergencyq-secrets
+
+          # Resource limits — ML model needs ~800MB RAM at startup
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+
+          # Liveness: Is the pod alive? Restart it if this fails.
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 60  # Give the model time to load
+            periodSeconds: 30
+            failureThreshold: 3
+
+          # Readiness: Is the pod ready to receive traffic?
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 3
