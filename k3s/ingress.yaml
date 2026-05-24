@@ -1,25 +1,13 @@
-# ══════════════════════════════════════════════
-#  ingress.yaml — EmergencyQ
+# ingress.yaml
+# Routes incoming internet traffic to the right internal service.
+#   /api/*    → Backend (FastAPI)
+#   /metrics  → Backend (Prometheus scraping)
+#   /         → Frontend (React/Nginx)
 #
-#  Ingress kya hai?
-#  Bahar se (internet se) aane wale traffic ko
-#  SAHI service pe bhejta hai.
+# k3s comes with Traefik built-in, so no extra ingress controller needed.
+# To add HTTPS later, uncomment the cert-manager annotation and set up Let's Encrypt.
 #
-#  Jaise airport mein immigration counter hota hai:
-#    → "Domestic flight? Left side jao" (frontend)
-#    → "International? Right side jao"  (backend API)
-#
-#  Ingress yehi karta hai:
-#    → emergencyq.com/          → Frontend Service
-#    → emergencyq.com/api/      → Backend Service
-#    → emergencyq.com/metrics   → Backend (Prometheus)
-#
-#  ⚠️ PREREQUISITE:
-#  Ingress Controller install hona chahiye cluster mein.
-#  Command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
-#
-#  Apply: kubectl apply -f k8s/ingress.yaml -n emergencyq
-# ══════════════════════════════════════════════
+# Apply: kubectl apply -f k3s/ingress.yaml -n emergencyq
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -29,28 +17,23 @@ metadata:
   labels:
     app: emergencyq
   annotations:
-    # Nginx Ingress Controller use karo
-    kubernetes.io/ingress.class: "nginx"
-    # Agar HTTPS lagana ho to uncomment karo:
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: "traefik"  # k3s default ingress controller
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"  # Uncomment for HTTPS
 
 spec:
   rules:
-    # ── Routing Rules ──────────────────────────
-    # Agar domain name hai to yahan daalo:
-    # - host: emergencyq.com
     - http:
         paths:
-          # Rule 1: /api/* requests → Backend Service
+          # API traffic → Backend
           - path: /api
             pathType: Prefix
             backend:
               service:
-                name: emergencyq-backend-svc     # backend-service.yaml ka naam
+                name: emergencyq-backend-svc
                 port:
                   number: 8000
 
-          # Rule 2: /metrics → Backend (Prometheus scraping)
+          # Prometheus metrics → Backend
           - path: /metrics
             pathType: Prefix
             backend:
@@ -59,11 +42,11 @@ spec:
                 port:
                   number: 8000
 
-          # Rule 3: Baaki sab kuch → Frontend
+          # Everything else → Frontend
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: emergencyq-frontend-svc    # frontend-service.yaml ka naam
+                name: emergencyq-frontend-svc
                 port:
                   number: 80

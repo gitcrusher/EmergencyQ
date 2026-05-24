@@ -1,16 +1,8 @@
-# ══════════════════════════════════════════════
-#  frontend-deployment.yaml — EmergencyQ
+# frontend-deployment.yaml
+# Runs the React app served via Nginx.
+# Lighter than the backend — no ML model, just static files.
 #
-#  Frontend Deployment = React app (Nginx se serve)
-#
-#  Backend deployment se kya farak hai?
-#  → Image alag hai (frontend wali)
-#  → Resources kam chahiye (static files serve karna light kaam hai)
-#  → Health check / pe hoga (Nginx default)
-#  → Port 80 hai (HTTP standard)
-#
-#  Apply: kubectl apply -f k8s/frontend-deployment.yaml -n emergencyq
-# ══════════════════════════════════════════════
+# Apply: kubectl apply -f k3s/frontend-deployment.yaml -n emergencyq
 
 apiVersion: apps/v1
 kind: Deployment
@@ -21,7 +13,7 @@ metadata:
     app: emergencyq-frontend
 
 spec:
-  replicas: 2                  # 2 copies of frontend
+  replicas: 2
 
   selector:
     matchLabels:
@@ -40,13 +32,19 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: YOUR_DOCKERHUB_USER/emergencyq-frontend:latest
-          imagePullPolicy: Always
+          image: nlpproject-frontend:latest   # local image (k3d imported)
+          imagePullPolicy: Never                    # use local image, don't pull from registry
 
           ports:
-            - containerPort: 80         # Nginx is port pe serve karta hai
+            - containerPort: 80
 
-          # Frontend ke liye kam resources chahiye
+          # Tells nginx which backend service to proxy /api/ to
+          # Nginx template uses ${BACKEND_HOST} via envsubst at startup
+          env:
+            - name: BACKEND_HOST
+              value: "emergencyq-backend-svc"
+
+          # Frontend is lightweight — only serves static files
           resources:
             requests:
               memory: "64Mi"
@@ -55,12 +53,11 @@ spec:
               memory: "128Mi"
               cpu: "200m"
 
-          # Health check — Nginx respond kar raha hai ya nahi
           livenessProbe:
             httpGet:
               path: /
               port: 80
-            initialDelaySeconds: 10      # Nginx fast start hota hai
+            initialDelaySeconds: 10
             periodSeconds: 30
 
           readinessProbe:

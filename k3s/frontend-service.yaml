@@ -1,11 +1,8 @@
-# ══════════════════════════════════════════════
-#  frontend-service.yaml — EmergencyQ
+# frontend-service.yaml
+# Stable internal address for the frontend pods.
+# Same concept as backend-service — Ingress routes "/" traffic here.
 #
-#  Frontend Service = Nginx pods ke liye stable address
-#  Same concept as backend-service.yaml
-#
-#  Apply: kubectl apply -f k8s/frontend-service.yaml -n emergencyq
-# ══════════════════════════════════════════════
+# Apply: kubectl apply -f k3s/frontend-service.yaml -n emergencyq
 
 apiVersion: v1
 kind: Service

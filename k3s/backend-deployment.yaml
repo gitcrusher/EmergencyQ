@@ -1,21 +1,9 @@
-# ══════════════════════════════════════════════
-#  backend-deployment.yaml — EmergencyQ
+# backend-deployment.yaml
+# Tells Kubernetes how to run the FastAPI backend.
+# Keeps 2 replicas running at all times for high availability.
+# Uses RollingUpdate so there's zero downtime during deployments.
 #
-#  Deployment kya hai?
-#  Kubernetes ko bolta hai:
-#  "Mera backend ka 2 copies chalao.
-#   Agar koi copy crash ho jaaye to naya banao.
-#   Agar naya version aaye to dheere dheere update karo."
-#
-#  Deployment = Restaurant mein "kitne chefs chahiye" decide karna
-#
-#  Iske andar 3 important cheezein hain:
-#    replicas   → kitne copies (2)
-#    containers → kaunsa Docker image chalana hai
-#    resources  → kitna CPU/RAM dena hai
-#
-#  Apply: kubectl apply -f k8s/backend-deployment.yaml -n emergencyq
-# ══════════════════════════════════════════════
+# Apply: kubectl apply -f k3s/backend-deployment.yaml -n emergencyq
 
 apiVersion: apps/v1
 kind: Deployment
@@ -26,26 +14,18 @@ metadata:
     app: emergencyq-backend
 
 spec:
-  # ── Kitne copies chahiye ─────────────────────
-  replicas: 2
-  # 2 copies kyun?
-  #   → 1 crash hua to doosra handle karega (high availability)
-  #   → Load 2 mein divide hoga (better performance)
-  #   → Production mein 3-5 kar do
+  replicas: 2  # 2 copies: one handles traffic if the other crashes
 
-  # ── Kaunse pods ko manage karna hai ──────────
   selector:
     matchLabels:
       app: emergencyq-backend
 
-  # ── Update Strategy ──────────────────────────
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1              # Update ke time 1 extra pod bana sakte ho
-      maxUnavailable: 0        # 0 = koi bhi pod band nahi hoga (zero downtime!)
+      maxSurge: 1        # Spin up 1 extra pod during updates
+      maxUnavailable: 0  # Never take a pod down before the new one is ready (zero downtime)
 
-  # ── Pod Template ─────────────────────────────
   template:
     metadata:
       labels:
@@ -53,50 +33,42 @@ spec:
     spec:
       containers:
         - name: backend
-          # ← Apna Docker Hub username daalo
-          image: YOUR_DOCKERHUB_USER/emergencyq-backend:latest
-          imagePullPolicy: Always        # Hamesha latest image pull karo
+          image: emergencyq-backend:v2   # local image (k3d imported)
+          imagePullPolicy: Never               # use local image, don't pull from registry
 
           ports:
-            - containerPort: 8000        # FastAPI is port pe sunti hai
+            - containerPort: 8000
 
-          # ── Environment Variables ────────────
+          # Load env vars from ConfigMap (non-sensitive) and Secret (sensitive)
           envFrom:
             - configMapRef:
-                name: emergencyq-config   # Non-secret vars (configmap.yaml)
+                name: emergencyq-config
             - secretRef:
-                name: emergencyq-secrets  # Secret vars (secret.yaml)
+                name: emergencyq-secrets
 
-          # ── Resource Limits ──────────────────
+          # Resource limits — ML model needs ~800MB RAM at startup
           resources:
-            requests:                    # Minimum guaranteed resources
-              memory: "512Mi"            # 512 MB RAM minimum
-              cpu: "250m"               # 0.25 CPU minimum
-            limits:                      # Maximum allowed resources
-              memory: "1Gi"             # 1 GB RAM max
-              cpu: "1000m"              # 1 CPU max
-            # ML model load hone pe ~800MB RAM use hota hai
-            # Isliye limit 1Gi rakhna zaroori hai
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
 
-          # ── Health Checks ────────────────────
-          # K8s check karta hai: "Ye pod alive hai ya nahi?"
-
-          # Liveness Probe: "Kya pod zinda hai?"
-          # Agar fail hua → K8s pod restart karega
+          # Liveness: Is the pod alive? Restart it if this fails.
           livenessProbe:
             httpGet:
-              path: /api/health          # Tera health endpoint
+              path: /api/health
               port: 8000
-            initialDelaySeconds: 60      # Pehle 60 sec wait karo (model loading)
-            periodSeconds: 30            # Har 30 sec mein check karo
-            failureThreshold: 3          # 3 baar fail = restart
+            initialDelaySeconds: 60  # Give the model time to load
+            periodSeconds: 30
+            failureThreshold: 3
 
-          # Readiness Probe: "Kya pod ready hai traffic lene ke liye?"
-          # Agar fail hua → traffic is pod pe NAHI aayega (but restart nahi hoga)
+          # Readiness: Is the pod ready to receive traffic?
           readinessProbe:
             httpGet:
               path: /api/health
               port: 8000
-            initialDelaySeconds: 45      # Model load hone mein 30-45 sec lag sakte hain
+            initialDelaySeconds: 45
             periodSeconds: 10
             failureThreshold: 3

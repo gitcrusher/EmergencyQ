@@ -263,13 +263,9 @@ resource "aws_instance" "app_server" {
 
 
 
-# ──────────────────────────────────────────────
 #  S3 BUCKET — ML Model Storage
-# ──────────────────────────────────────────────
-# S3 = Simple Storage Service = Cloud mein file storage
-# Trained DistilBERT model, label_encoder.pkl,
-# icp_model.pkl — sab yahan rakh do.
-# Server pe directly rakhne se agar server mita to model bhi gaya.
+
+#S3 (Simple Storage Service) is cloud-based file storage used to securely store files such as trained DistilBERT models, `label_encoder.pkl`, and `icp_model.pkl`, ensuring they remain safe even if the server is deleted.
 
 resource "aws_s3_bucket" "model_artifacts" {
   bucket = "${var.project_name}-models-${var.environment}"

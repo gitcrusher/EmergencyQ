@@ -1,20 +1,9 @@
-# ══════════════════════════════════════════════
-#  backend-service.yaml — EmergencyQ
+# backend-service.yaml
+# Gives the backend pods a stable, fixed address inside the cluster.
+# Pods come and go (crash, scale, restart) but the Service IP stays the same.
+# Ingress routes external traffic here; other pods call this service internally.
 #
-#  Service kya hai?
-#  Kubernetes mein pods ke upar ek STABLE address
-#  deta hai. Pods aate jaate rehte hain (restart, scale)
-#  par Service ka address FIXED rehta hai.
-#
-#  Analogy:
-#  Pod = Chef (aa sakta hai, ja sakta hai)
-#  Service = Restaurant ka counter
-#    → Customer counter pe order deta hai
-#    → Counter decide karta hai kaunse chef ko dena hai
-#    → Chef badle to customer ko farak nahi padta
-#
-#  Apply: kubectl apply -f k8s/backend-service.yaml -n emergencyq
-# ══════════════════════════════════════════════
+# Apply: kubectl apply -f k3s/backend-service.yaml -n emergencyq
 
 apiVersion: v1
 kind: Service
@@ -25,19 +14,14 @@ metadata:
     app: emergencyq-backend
 
 spec:
-  # ClusterIP = sirf cluster ke ANDAR se accessible
-  # (Ingress bahar se route karega)
-  type: ClusterIP
+  type: ClusterIP  # Only accessible inside the cluster; Ingress handles external routing
 
-  # ── Port Mapping ─────────────────────────────
   ports:
     - name: http
-      port: 8000               # Service ka port (cluster mein ye use hoga)
-      targetPort: 8000         # Container ka port (FastAPI yahan sun raha hai)
+      port: 8000       # Port other services use to reach this one
+      targetPort: 8000 # Port FastAPI is actually listening on
       protocol: TCP
 
-  # ── Kaunse pods ko traffic dena hai ──────────
-  # Ye labels match karke pods dhundhta hai
-  # backend-deployment.yaml mein same label hai
+  # Routes traffic to pods with this label (matches backend-deployment.yaml)
   selector:
     app: emergencyq-backend
