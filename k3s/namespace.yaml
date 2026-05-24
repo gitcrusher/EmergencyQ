@@ -1,0 +1,23 @@
+# ══════════════════════════════════════════════
+#  namespace.yaml — EmergencyQ
+#
+#  Namespace kya hai?
+#  Kubernetes mein ek "folder" jaisa hai.
+#  Jaise tera computer mein alag-alag folders hote hain
+#  (Documents, Downloads, Pictures), waise K8s mein
+#  namespaces hote hain.
+#
+#  Kyun? Taki tera app ka sab saamaan ek jagah rahe.
+#  Default namespace mein bahut kuch hota hai —
+#  apna alag namespace banao to clean rahega.
+#
+#  Apply: kubectl apply -f k8s/namespace.yaml
+# ══════════════════════════════════════════════
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: emergencyq
+  labels:
+    app: emergencyq
+    managed-by: kubectl

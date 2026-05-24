@@ -1,0 +1,69 @@
+# ══════════════════════════════════════════════
+#  ingress.yaml — EmergencyQ
+#
+#  Ingress kya hai?
+#  Bahar se (internet se) aane wale traffic ko
+#  SAHI service pe bhejta hai.
+#
+#  Jaise airport mein immigration counter hota hai:
+#    → "Domestic flight? Left side jao" (frontend)
+#    → "International? Right side jao"  (backend API)
+#
+#  Ingress yehi karta hai:
+#    → emergencyq.com/          → Frontend Service
+#    → emergencyq.com/api/      → Backend Service
+#    → emergencyq.com/metrics   → Backend (Prometheus)
+#
+#  ⚠️ PREREQUISITE:
+#  Ingress Controller install hona chahiye cluster mein.
+#  Command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+#
+#  Apply: kubectl apply -f k8s/ingress.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emergencyq-ingress
+  namespace: emergencyq
+  labels:
+    app: emergencyq
+  annotations:
+    # Nginx Ingress Controller use karo
+    kubernetes.io/ingress.class: "nginx"
+    # Agar HTTPS lagana ho to uncomment karo:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+spec:
+  rules:
+    # ── Routing Rules ──────────────────────────
+    # Agar domain name hai to yahan daalo:
+    # - host: emergencyq.com
+    - http:
+        paths:
+          # Rule 1: /api/* requests → Backend Service
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: emergencyq-backend-svc     # backend-service.yaml ka naam
+                port:
+                  number: 8000
+
+          # Rule 2: /metrics → Backend (Prometheus scraping)
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: emergencyq-backend-svc
+                port:
+                  number: 8000
+
+          # Rule 3: Baaki sab kuch → Frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: emergencyq-frontend-svc    # frontend-service.yaml ka naam
+                port:
+                  number: 80

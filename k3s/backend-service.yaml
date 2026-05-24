@@ -1,0 +1,43 @@
+# ══════════════════════════════════════════════
+#  backend-service.yaml — EmergencyQ
+#
+#  Service kya hai?
+#  Kubernetes mein pods ke upar ek STABLE address
+#  deta hai. Pods aate jaate rehte hain (restart, scale)
+#  par Service ka address FIXED rehta hai.
+#
+#  Analogy:
+#  Pod = Chef (aa sakta hai, ja sakta hai)
+#  Service = Restaurant ka counter
+#    → Customer counter pe order deta hai
+#    → Counter decide karta hai kaunse chef ko dena hai
+#    → Chef badle to customer ko farak nahi padta
+#
+#  Apply: kubectl apply -f k8s/backend-service.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: emergencyq-backend-svc
+  namespace: emergencyq
+  labels:
+    app: emergencyq-backend
+
+spec:
+  # ClusterIP = sirf cluster ke ANDAR se accessible
+  # (Ingress bahar se route karega)
+  type: ClusterIP
+
+  # ── Port Mapping ─────────────────────────────
+  ports:
+    - name: http
+      port: 8000               # Service ka port (cluster mein ye use hoga)
+      targetPort: 8000         # Container ka port (FastAPI yahan sun raha hai)
+      protocol: TCP
+
+  # ── Kaunse pods ko traffic dena hai ──────────
+  # Ye labels match karke pods dhundhta hai
+  # backend-deployment.yaml mein same label hai
+  selector:
+    app: emergencyq-backend

@@ -1,0 +1,71 @@
+# ══════════════════════════════════════════════
+#  frontend-deployment.yaml — EmergencyQ
+#
+#  Frontend Deployment = React app (Nginx se serve)
+#
+#  Backend deployment se kya farak hai?
+#  → Image alag hai (frontend wali)
+#  → Resources kam chahiye (static files serve karna light kaam hai)
+#  → Health check / pe hoga (Nginx default)
+#  → Port 80 hai (HTTP standard)
+#
+#  Apply: kubectl apply -f k8s/frontend-deployment.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emergencyq-frontend
+  namespace: emergencyq
+  labels:
+    app: emergencyq-frontend
+
+spec:
+  replicas: 2                  # 2 copies of frontend
+
+  selector:
+    matchLabels:
+      app: emergencyq-frontend
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: emergencyq-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: YOUR_DOCKERHUB_USER/emergencyq-frontend:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 80         # Nginx is port pe serve karta hai
+
+          # Frontend ke liye kam resources chahiye
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+
+          # Health check — Nginx respond kar raha hai ya nahi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10      # Nginx fast start hota hai
+            periodSeconds: 30
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

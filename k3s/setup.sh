@@ -35,7 +35,7 @@ kubectl get nodes
 
 echo -e "${BLUE}📦 Step 2: Setting up Namespace and Secrets...${NC}"
 # Create the namespace
-kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k3s/namespace.yaml
 
 # Generate K8s secret dynamically from the server's local .env file
 if [ -f .env ]; then
@@ -46,23 +46,23 @@ if [ -f .env ]; then
       --dry-run=client -o yaml | kubectl apply -f -
 else
     echo -e "${YELLOW}⚠️ .env file not found. Falling back to placeholder secret.yaml...${NC}"
-    kubectl apply -f k8s/secret.yaml -n emergencyq
+    kubectl apply -f k3s/secret.yaml -n emergencyq
 fi
 
 # Apply ConfigMaps
 echo -e "${BLUE}⚙️ Applying ConfigMaps...${NC}"
-kubectl apply -f k8s/configmap.yaml -n emergencyq
+kubectl apply -f k3s/configmap.yaml -n emergencyq
 
 # Deploy Services to Kubernetes
 echo -e "${BLUE}🚀 Step 3: Deploying Services (Backend & Frontend) to Kubernetes...${NC}"
-kubectl apply -f k8s/backend-deployment.yaml -n emergencyq
-kubectl apply -f k8s/backend-service.yaml -n emergencyq
-kubectl apply -f k8s/frontend-deployment.yaml -n emergencyq
-kubectl apply -f k8s/frontend-service.yaml -n emergencyq
+kubectl apply -f k3s/backend-deployment.yaml -n emergencyq
+kubectl apply -f k3s/backend-service.yaml -n emergencyq
+kubectl apply -f k3s/frontend-deployment.yaml -n emergencyq
+kubectl apply -f k3s/frontend-service.yaml -n emergencyq
 
 # Apply Ingress configuration for web routing
 echo -e "${BLUE}🌐 Applying Ingress routing rules...${NC}"
-kubectl apply -f k8s/ingress.yaml -n emergencyq
+kubectl apply -f k3s/ingress.yaml -n emergencyq
 
 echo -e "${GREEN}🎉 Step 4: Kubernetes Setup & Deployment complete!${NC}"
 echo -e "${GREEN}Active Deployments:${NC}"

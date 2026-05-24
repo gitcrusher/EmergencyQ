@@ -1,0 +1,28 @@
+# ══════════════════════════════════════════════
+#  frontend-service.yaml — EmergencyQ
+#
+#  Frontend Service = Nginx pods ke liye stable address
+#  Same concept as backend-service.yaml
+#
+#  Apply: kubectl apply -f k8s/frontend-service.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: emergencyq-frontend-svc
+  namespace: emergencyq
+  labels:
+    app: emergencyq-frontend
+
+spec:
+  type: ClusterIP
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+  selector:
+    app: emergencyq-frontend

@@ -1,0 +1,41 @@
+# ══════════════════════════════════════════════
+#  configmap.yaml — EmergencyQ
+#
+#  ConfigMap kya hai?
+#  Non-secret environment variables store karta hai.
+#  Jaise .env file hoti hai tere laptop pe,
+#  waise ConfigMap hai K8s mein.
+#
+#  Secret vs ConfigMap:
+#    ConfigMap = non-sensitive (port, log level, debug flag)
+#    Secret    = sensitive (passwords, API keys, DB URL)
+#
+#  Apply: kubectl apply -f k8s/configmap.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: emergencyq-config
+  namespace: emergencyq
+  labels:
+    app: emergencyq
+data:
+  # ── App Settings ─────────────────────────────
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  ENV: "production"
+  DEBUG: "False"
+  LOG_LEVEL: "info"
+
+  # ── Model Settings ──────────────────────────
+  MODEL_PATH: "backend/app/model/trained_model"
+  CONFORMAL_ALPHA: "0.05"
+
+  # ── CORS ────────────────────────────────────
+  ALLOWED_ORIGINS: "http://localhost:80,http://localhost:3000"
+
+  # ── Retrieval Settings ──────────────────────
+  RETRIEVER_TOP_K: "5"
+  RETRIEVER_FETCH_K: "20"
+  DECAY_LAMBDA: "0.01"

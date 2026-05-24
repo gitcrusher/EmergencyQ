@@ -1,0 +1,102 @@
+# ══════════════════════════════════════════════
+#  backend-deployment.yaml — EmergencyQ
+#
+#  Deployment kya hai?
+#  Kubernetes ko bolta hai:
+#  "Mera backend ka 2 copies chalao.
+#   Agar koi copy crash ho jaaye to naya banao.
+#   Agar naya version aaye to dheere dheere update karo."
+#
+#  Deployment = Restaurant mein "kitne chefs chahiye" decide karna
+#
+#  Iske andar 3 important cheezein hain:
+#    replicas   → kitne copies (2)
+#    containers → kaunsa Docker image chalana hai
+#    resources  → kitna CPU/RAM dena hai
+#
+#  Apply: kubectl apply -f k8s/backend-deployment.yaml -n emergencyq
+# ══════════════════════════════════════════════
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emergencyq-backend
+  namespace: emergencyq
+  labels:
+    app: emergencyq-backend
+
+spec:
+  # ── Kitne copies chahiye ─────────────────────
+  replicas: 2
+  # 2 copies kyun?
+  #   → 1 crash hua to doosra handle karega (high availability)
+  #   → Load 2 mein divide hoga (better performance)
+  #   → Production mein 3-5 kar do
+
+  # ── Kaunse pods ko manage karna hai ──────────
+  selector:
+    matchLabels:
+      app: emergencyq-backend
+
+  # ── Update Strategy ──────────────────────────
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1              # Update ke time 1 extra pod bana sakte ho
+      maxUnavailable: 0        # 0 = koi bhi pod band nahi hoga (zero downtime!)
+
+  # ── Pod Template ─────────────────────────────
+  template:
+    metadata:
+      labels:
+        app: emergencyq-backend
+    spec:
+      containers:
+        - name: backend
+          # ← Apna Docker Hub username daalo
+          image: YOUR_DOCKERHUB_USER/emergencyq-backend:latest
+          imagePullPolicy: Always        # Hamesha latest image pull karo
+
+          ports:
+            - containerPort: 8000        # FastAPI is port pe sunti hai
+
+          # ── Environment Variables ────────────
+          envFrom:
+            - configMapRef:
+                name: emergencyq-config   # Non-secret vars (configmap.yaml)
+            - secretRef:
+                name: emergencyq-secrets  # Secret vars (secret.yaml)
+
+          # ── Resource Limits ──────────────────
+          resources:
+            requests:                    # Minimum guaranteed resources
+              memory: "512Mi"            # 512 MB RAM minimum
+              cpu: "250m"               # 0.25 CPU minimum
+            limits:                      # Maximum allowed resources
+              memory: "1Gi"             # 1 GB RAM max
+              cpu: "1000m"              # 1 CPU max
+            # ML model load hone pe ~800MB RAM use hota hai
+            # Isliye limit 1Gi rakhna zaroori hai
+
+          # ── Health Checks ────────────────────
+          # K8s check karta hai: "Ye pod alive hai ya nahi?"
+
+          # Liveness Probe: "Kya pod zinda hai?"
+          # Agar fail hua → K8s pod restart karega
+          livenessProbe:
+            httpGet:
+              path: /api/health          # Tera health endpoint
+              port: 8000
+            initialDelaySeconds: 60      # Pehle 60 sec wait karo (model loading)
+            periodSeconds: 30            # Har 30 sec mein check karo
+            failureThreshold: 3          # 3 baar fail = restart
+
+          # Readiness Probe: "Kya pod ready hai traffic lene ke liye?"
+          # Agar fail hua → traffic is pod pe NAHI aayega (but restart nahi hoga)
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 45      # Model load hone mein 30-45 sec lag sakte hain
+            periodSeconds: 10
+            failureThreshold: 3
