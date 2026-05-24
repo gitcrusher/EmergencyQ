@@ -31,3 +31,4 @@ terraform.tfvars
 
 # ── Kubernetes Secrets ──
 k3s/secret.yaml
+.env.k8s
