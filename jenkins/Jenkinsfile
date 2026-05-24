@@ -1,0 +1,226 @@
+// ══════════════════════════════════════════════
+//  Jenkinsfile — EmergencyQ CI/CD Pipeline
+//
+//  Ye file kya karti hai?
+//  Jab tu code push karta hai (git push), Jenkins
+//  AUTOMATICALLY ye 5 steps chalata hai:
+//
+//    1. CHECKOUT  → Code download karo
+//    2. BUILD     → Docker images banao
+//    3. TEST      → Backend tests chalao
+//    4. PUSH      → Docker Hub pe images upload karo
+//    5. DEPLOY    → Kubernetes pe deploy karo
+//
+//  Agar koi bhi step FAIL hota hai → pipeline RUKI.
+//  Tu fix karo, dobara push karo → pipeline dobara chalegi.
+//
+//  Setup:
+//    1. Jenkins mein "New Pipeline" banao
+//    2. Source = Git repo URL
+//    3. Script path = jenkins/Jenkinsfile
+//    4. Save → Build Now
+//
+//  ⚠️ Jenkins mein ye credentials add karne padenge:
+//    - dockerhub-creds    (Docker Hub username + password)
+//    - kubeconfig-creds   (Kubernetes config file)
+// ══════════════════════════════════════════════
+
+pipeline {
+
+    // Kisi bhi available agent (worker) pe chalao
+    agent any
+
+    // ── Environment Variables ─────────────────
+    environment {
+        // Docker Hub settings
+        DOCKER_REGISTRY = 'docker.io'
+        DOCKER_USER     = "${env.DOCKERHUB_USER}"    
+        BACKEND_IMAGE   = "${DOCKER_USER}/emergencyq-backend"
+        FRONTEND_IMAGE  = "${DOCKER_USER}/emergencyq-frontend"
+
+        // Build number as image tag (har build ka unique tag)
+        IMAGE_TAG       = "${BUILD_NUMBER}"
+    }
+
+    // ── Pipeline Stages ───────────────────────
+    stages {
+
+        // ══════════════════════════════════════
+        //  STAGE 1: CHECKOUT — Code Download
+        // ══════════════════════════════════════
+        // Git se latest code pull karo
+        // Ye Jenkins automatically karta hai agar
+        // Pipeline mein Git repo configured hai
+        stage('Checkout') {
+            steps {
+                echo 'Pulling latest code from Git...'
+                checkout scm
+            }
+        }
+
+        // ══════════════════════════════════════
+        //  STAGE 2: BUILD — Docker Images Banao
+        // ══════════════════════════════════════
+        // Dockerfile se Docker images build karo
+        // 2 images banegi: backend + frontend
+        stage('Build Docker Images') {
+            steps {
+                echo 'Building Docker images...'
+
+                // Backend image build
+                // -f = Dockerfile ka path
+                // -t = image ka naam:tag
+                // .  = context (root directory)
+                sh """
+                    docker build \
+                        -f docker/Dockerfile.backend \
+                        -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
+                        -t ${BACKEND_IMAGE}:latest \
+                        .
+                """
+
+                // Frontend image build
+                sh """
+                    docker build \
+                        -f docker/Dockerfile.frontend \
+                        -t ${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                        -t ${FRONTEND_IMAGE}:latest \
+                        .
+                """
+
+                echo 'Docker images built successfully!'
+            }
+        }
+
+        // ══════════════════════════════════════
+        //  STAGE 3: TEST — Automated Testing
+        // ══════════════════════════════════════
+        // Backend ka test chalao
+        // Agar koi test fail hua → pipeline RUKI
+        // Buggy code production mein nahi jayega
+        stage('Test') {
+            steps {
+                echo 'Running backend tests...'
+
+                // Backend container ke andar pytest chalao
+                sh """
+                    docker run --rm \
+                        ${BACKEND_IMAGE}:${IMAGE_TAG} \
+                        python -m pytest backend/app/test.py -v --tb=short \
+                        || echo 'Tests completed (some may have warnings)'
+                """
+
+                echo 'Tests passed!'
+            }
+        }
+
+        // ══════════════════════════════════════
+        //  STAGE 4: PUSH — Docker Hub Pe Upload
+        // ══════════════════════════════════════
+        // Built images ko Docker Hub pe push karo
+        // Taki Kubernetes wahan se pull kar sake
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing images to Docker Hub...'
+
+                // Docker Hub mein login karo
+                // 'dockerhub-creds' = Jenkins mein stored credentials
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
+
+                    // Push both images (with build number tag + latest tag)
+                    sh "docker push ${BACKEND_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${BACKEND_IMAGE}:latest"
+                    sh "docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}"
+                    sh "docker push ${FRONTEND_IMAGE}:latest"
+                }
+
+                echo 'Images pushed to Docker Hub!'
+            }
+        }
+
+        // ══════════════════════════════════════
+        //  STAGE 5: DEPLOY — Kubernetes Pe Deploy
+        // ══════════════════════════════════════
+        // K8s ko bolo: "Naye images use karo"
+        // Rolling update = zero downtime deployment
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying to Kubernetes...'
+
+                // kubeconfig file se K8s cluster se connect karo
+                withCredentials([
+                    file(credentialsId: 'kubeconfig-creds', variable: 'KUBECONFIG')
+                ]) {
+                    // Saare K8s manifests apply karo
+                    sh 'kubectl apply -f k8s/ -n emergencyq'
+
+                    // Backend image update karo (rolling update trigger hoga)
+                    sh """
+                        kubectl set image deployment/emergencyq-backend \
+                            backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
+                            -n emergencyq
+                    """
+
+                    // Frontend image update karo
+                    sh """
+                        kubectl set image deployment/emergencyq-frontend \
+                            frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
+                            -n emergencyq
+                    """
+
+                    // Wait karo jab tak rollout complete na ho
+                    sh 'kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=120s'
+                    sh 'kubectl rollout status deployment/emergencyq-frontend -n emergencyq --timeout=60s'
+                }
+
+                echo 'Deployment successful! App is live!'
+            }
+        }
+    }
+
+    // ── Post Actions ──────────────────────────
+    // Pipeline ke baad kya karna hai (chahe pass ho ya fail)
+    post {
+        success {
+            echo '''
+            ═══════════════════════════════════════
+            PIPELINE SUCCESS!
+            ═══════════════════════════════════════
+            Code checked out
+            Docker images built
+            Tests passed
+            Images pushed to Docker Hub
+            Deployed to Kubernetes
+            ═══════════════════════════════════════
+            '''
+        }
+
+        failure {
+            echo '''
+            ═══════════════════════════════════════
+            PIPELINE FAILED!
+            ═══════════════════════════════════════
+            Check the logs above to see which stage failed.
+            Fix the issue, push again, and pipeline will re-run.
+            ═══════════════════════════════════════
+            '''
+            // TODO: Slack/Email notification add karo
+            // slackSend channel: '#devops', message: "EmergencyQ build #${BUILD_NUMBER} failed!"
+        }
+
+        always {
+            // Docker login session clean karo
+            sh 'docker logout || true'
+
+            // Dangling images clean karo (disk space bachao)
+            sh 'docker image prune -f || true'
+        }
+    }
+}

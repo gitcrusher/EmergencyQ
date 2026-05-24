@@ -28,3 +28,6 @@ terraform.tfvars
 *.tfvars
 *.tfvars.json
 *.tfplan
+
+# ── Kubernetes Secrets ──
+k3s/secret.yaml

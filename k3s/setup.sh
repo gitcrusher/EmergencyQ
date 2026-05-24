@@ -6,6 +6,7 @@ set -e
 
 # Pretty logging colors
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 BLUE='\033[1;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
@@ -45,8 +46,8 @@ if [ -f .env ]; then
       -n emergencyq \
       --dry-run=client -o yaml | kubectl apply -f -
 else
-    echo -e "${YELLOW}⚠️ .env file not found. Falling back to placeholder secret.yaml...${NC}"
-    kubectl apply -f k3s/secret.yaml -n emergencyq
+    echo -e "${RED}❌ ERROR: .env file not found! Secrets cannot be created securely. Please create a .env file on the server.${NC}"
+    exit 1
 fi
 
 # Apply ConfigMaps
