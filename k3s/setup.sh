@@ -61,6 +61,14 @@ kubectl apply -f k3s/backend-service.yaml -n emergencyq
 kubectl apply -f k3s/frontend-deployment.yaml -n emergencyq
 kubectl apply -f k3s/frontend-service.yaml -n emergencyq
 
+echo -e "${BLUE}📊 Step 3.5: Deploying Monitoring (Prometheus & Grafana)...${NC}"
+kubectl apply -f k3s/prometheus-configmap.yaml -n emergencyq
+kubectl apply -f k3s/prometheus-deployment.yaml -n emergencyq
+kubectl apply -f k3s/grafana-datasources-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-providers-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-dashboards-configmap.yaml -n emergencyq
+kubectl apply -f k3s/grafana-deployment.yaml -n emergencyq
+
 echo -e "${BLUE}🌐 Applying Ingress routing rules...${NC}"
 kubectl apply -f k3s/ingress.yaml -n emergencyq
 
