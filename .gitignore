@@ -32,3 +32,7 @@ terraform.tfvars
 # ── Kubernetes Secrets ──
 k3s/secret.yaml
 .env.k8s
+
+
+KUBERNETES_MIGRATION.md
+DEVOPS_BIBLE.md
