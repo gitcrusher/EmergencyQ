@@ -1,0 +1,65 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - devops-dev
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/emergencyq-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/emergencyq-frontend
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/Dockerfile.backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ github.run_number }}
+            ${{ env.BACKEND_IMAGE }}:latest
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ github.run_number }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            export KUBECONFIG=/home/ubuntu/.kube/config
+            
+            # Update Deployments with new image tag
+            kubectl set image deployment/emergencyq-backend backend=${{ env.BACKEND_IMAGE }}:${{ github.run_number }} -n emergencyq
+            kubectl set image deployment/emergencyq-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.run_number }} -n emergencyq
+            
+            # Wait for rollout
+            kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=120s
+            kubectl rollout status deployment/emergencyq-frontend -n emergencyq --timeout=60s
