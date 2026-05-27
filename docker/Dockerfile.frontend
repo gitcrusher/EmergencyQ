@@ -6,7 +6,7 @@
 #
 # Final image is ~25MB (no Node.js, just Nginx + static files)
 
-# ── Stage 1: Build ──────────────────────────────────────
+# Stage 1: Build 
 FROM node:20-slim AS builder
 
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY frontend/ .
 RUN npm run build
 
 
-# ── Stage 2: Serve ──────────────────────────────────────
+#  Stage 2: Serve with Nginx
 FROM nginx:alpine
 
 # Copy built React files into Nginx's web root
