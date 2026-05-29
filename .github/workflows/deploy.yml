@@ -61,5 +61,5 @@ jobs:
             kubectl set image deployment/emergencyq-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.run_number }} -n emergencyq
             
             # Wait for rollout
-            kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=600s
+            kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=900s
             kubectl rollout status deployment/emergencyq-frontend -n emergencyq --timeout=300s

@@ -55,13 +55,23 @@ spec:
               memory: "1Gi"
               cpu: "1000m"
 
+          # Startup: Give the model plenty of time to load from swap,
+          # checking frequently so it becomes ready as soon as possible.
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 30  # Give it 30 seconds before starting checks
+            periodSeconds: 15        # Check every 15 seconds
+            failureThreshold: 40     # 40 * 15s = 600s (10 minutes) maximum startup time
+
           # Liveness: Is the pod alive? Restart it if this fails.
           livenessProbe:
             httpGet:
               path: /api/health
               port: 8000
-            initialDelaySeconds: 60  # Give the model time to load
-            periodSeconds: 30
+            initialDelaySeconds: 10
+            periodSeconds: 20
             failureThreshold: 3
 
           # Readiness: Is the pod ready to receive traffic?
@@ -69,6 +79,6 @@ spec:
             httpGet:
               path: /api/health
               port: 8000
-            initialDelaySeconds: 45
+            initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
