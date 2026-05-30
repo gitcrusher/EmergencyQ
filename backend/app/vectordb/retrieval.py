@@ -14,7 +14,9 @@ import chromadb
 
 logger = logging.getLogger(__name__)
 
-CHROMA_DIR      = os.environ.get("CHROMA_PERSIST_DIR", "./app/vectordb/chroma_db")
+import pathlib
+DEFAULT_CHROMA_DIR = str(pathlib.Path(__file__).parent / "chroma_db")
+CHROMA_DIR      = os.environ.get("CHROMA_PERSIST_DIR", DEFAULT_CHROMA_DIR)
 COLLECTION_NAME = "incidents"
 EMBED_MODEL     = "all-MiniLM-L6-v2"
 
