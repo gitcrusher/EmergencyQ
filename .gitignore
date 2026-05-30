@@ -13,9 +13,15 @@ Thumbs.db
 .ssh/
 
 # ── AI / ML Models & Databases ──
-backend/app/model/trained_model/
+backend/app/model/trained_model/*
+!backend/app/model/trained_model/quantized/
 backend/app/model/*.pkl
+!backend/app/model/label_encoder.pkl
 backend/app/vectordb/chroma_db/
+
+# ── MLflow ──
+mlruns/
+mlflow.db
 
 # ── SSH Keys & Terraform Secrets ──
 *.pem
