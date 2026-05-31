@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 MODEL_DIR  = Path(os.environ.get("MODEL_PATH", "./backend/app/model/trained_model"))
 ICP_PATH   = MODEL_DIR.parent / "icp_model.pkl"
-VAL_CSV    = Path("dataset/processed/val.csv")
+VAL_CSV    = Path(__file__).parent.parent / "dataset/processed/val.csv"
 ALPHA      = float(os.environ.get("CONFORMAL_ALPHA", "0.05"))
 
 

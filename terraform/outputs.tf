@@ -1,4 +1,7 @@
 
+
+
+ 
 #  when `terraform apply` complete then it gives output
 #    → Server IP address
 #    → S3 bucket ka naam
