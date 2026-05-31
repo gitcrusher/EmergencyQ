@@ -112,12 +112,25 @@ def load_model():
     print("\n LOADING DISTILBERT MODEL")
 
     try:
-        _model = DistilBertForSequenceClassification.from_pretrained(
-            MODEL_PATH,
-            local_files_only=True
+        import torch.quantization
+        from transformers import DistilBertConfig
+        
+        # 1. Load model configuration
+        config = DistilBertConfig.from_pretrained(MODEL_PATH, local_files_only=True)
+        
+        # 2. Initialize empty model architecture
+        _model = DistilBertForSequenceClassification(config)
+        
+        # 3. Apply dynamic quantization to match the saved architecture
+        _model = torch.quantization.quantize_dynamic(
+            _model, {torch.nn.Linear}, dtype=torch.qint8
         )
+        
+        # 4. Load the INT8 state dict
+        state_dict_path = os.path.join(MODEL_PATH, "model_quantized.pt")
+        _model.load_state_dict(torch.load(state_dict_path, map_location=DEVICE))
 
-        print("MODEL LOADED")
+        print("MODEL LOADED SUCCESSFULLY")
 
     except Exception as e:
         print(" MODEL ERROR:", str(e))
