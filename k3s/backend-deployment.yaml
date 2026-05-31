@@ -33,7 +33,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: gitcrusher/emergencyq-backend:latest
+          image: knightsmokers/emergencyq-backend:latest
           imagePullPolicy: Always
 
           ports:
