@@ -32,8 +32,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: nlpproject-frontend:latest
-          imagePullPolicy: Never
+          image: gitcrusher/emergencyq-frontend:latest
+          imagePullPolicy: Always
 
           ports:
             - containerPort: 80

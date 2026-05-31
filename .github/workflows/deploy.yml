@@ -55,13 +55,17 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 15m
           script: |
-            export KUBECONFIG=/home/ubuntu/.kube/config
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            
+            # Re-apply manifests (picks up imagePullPolicy: Always)
+            sudo kubectl apply -f /home/ubuntu/k3s/ -n emergencyq 2>/dev/null || true
             
             # Update Deployments with new image tag
-            kubectl set image deployment/emergencyq-backend backend=${{ env.BACKEND_IMAGE }}:${{ github.run_number }} -n emergencyq
-            kubectl set image deployment/emergencyq-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.run_number }} -n emergencyq
+            sudo kubectl set image deployment/emergencyq-backend backend=${{ env.BACKEND_IMAGE }}:${{ github.run_number }} -n emergencyq
+            sudo kubectl set image deployment/emergencyq-frontend frontend=${{ env.FRONTEND_IMAGE }}:${{ github.run_number }} -n emergencyq
             
             # Wait for rollout
-            kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=900s
-            kubectl rollout status deployment/emergencyq-frontend -n emergencyq --timeout=300s
+            sudo kubectl rollout status deployment/emergencyq-backend -n emergencyq --timeout=900s
+            sudo kubectl rollout status deployment/emergencyq-frontend -n emergencyq --timeout=300s
