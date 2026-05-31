@@ -16,6 +16,7 @@ Thumbs.db
 backend/app/model/trained_model/*
 backend/app/model/*.pkl
 !backend/app/model/label_encoder.pkl
+!backend/app/model/icp_model.pkl
 backend/app/vectordb/chroma_db/
 
 # ── MLflow ──
