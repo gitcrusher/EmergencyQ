@@ -21,10 +21,7 @@ spec:
       app: emergencyq-backend
 
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1        # Spin up 1 extra pod during updates
-      maxUnavailable: 0  # Never take a pod down before the new one is ready (zero downtime)
+    type: Recreate
 
   template:
     metadata:
