@@ -70,6 +70,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 20
             failureThreshold: 3
+            
 
           # Readiness: Is the pod ready to receive traffic?
           readinessProbe:
