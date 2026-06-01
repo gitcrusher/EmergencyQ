@@ -59,8 +59,17 @@ jobs:
           script: |
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             
-            # Re-apply manifests (picks up imagePullPolicy: Always)
-            sudo kubectl apply -f /home/ubuntu/k3s/ -n emergencyq 2>/dev/null || true
+            # Apply core manifests (no Grafana — saves ~287MB RAM on t3.small)
+            sudo kubectl apply -f /home/ubuntu/k3s/namespace.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/configmap.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/secret.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/backend-deployment.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/backend-service.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/frontend-deployment.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/frontend-service.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/prometheus-configmap.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/prometheus-deployment.yaml -n emergencyq 2>/dev/null || true
+            sudo kubectl apply -f /home/ubuntu/k3s/ingress.yaml -n emergencyq 2>/dev/null || true
             
             # Update Deployments with new image tag
             sudo kubectl set image deployment/emergencyq-backend backend=${{ env.BACKEND_IMAGE }}:${{ github.run_number }} -n emergencyq

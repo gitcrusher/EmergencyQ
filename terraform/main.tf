@@ -170,14 +170,15 @@ resource "aws_security_group" "app_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Grafana Dashboard (port 3000)
-  ingress {
-    description = "Grafana"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # Grafana Dashboard (port 3000) — disabled to save RAM on t3.small
+  # Uncomment to re-enable Grafana
+  # ingress {
+  #   description = "Grafana"
+  #   from_port   = 3000
+  #   to_port     = 3000
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   # Prometheus UI (port 9090)
   ingress {
